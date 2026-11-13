@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load formato_clp %}
+
+{% block content %}
+<h2 class="mb-4">Pedidos del Día ({{ hoy|date:"d/m/Y" }})</h2>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <select name="estado" class="form-select">
+            <option value="">Todos los estados</option>
+            {% for est in estados %}
+                <option value="{{ est }}" {% if estado_seleccionado == est %}selected{% endif %}>{{ est }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-danger w-100">Filtrar</button>
+    </div>
+</form>
+
+{% for pedido in pedidos %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Pedido #{{ pedido.id }}</strong> - Cliente: {{ pedido.cliente.first_name|default:pedido.cliente.username }}
+                | Retiro: <strong>{{ pedido.hora_retiro|time:"H:i" }}</strong>
+            </div>
+            <span class="badge bg-primary">{{ pedido.estado }}</span>
+        </div>
+        <div class="card-body">
+            {% if pedido.observacion %}
+                <p class="text-muted"><strong>Observación:</strong> {{ pedido.observacion }}</p>
+            {% endif %}
+            <ul class="mb-3">
+                {% for det in pedido.detalles.all %}
+                    <li>{{ det.cantidad }}x {{ det.producto.nombre }} ({{ det.subtotal|clp }})</li>
+                {% endfor %}
+            </ul>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">Total: {{ pedido.total|clp }}</span>
+                {% if pedido.estado != 'Entregado' and pedido.estado != 'Cancelado' %}
+                    <form method="post" action="{% url 'avanzar_estado_pedido' pedido.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            Avanzar estado
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="alert alert-info">No hay pedidos registrados para hoy con ese filtro.</div>
+{% endfor %}
+{% endblock %}
