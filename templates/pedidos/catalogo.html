@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load formato_clp %}
+
+{% block content %}
+<h2 class="mb-4">Catálogo de Productos</h2>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-5">
+        <input type="text" name="q" value="{{ busqueda }}" class="form-control" placeholder="Buscar producto por nombre...">
+    </div>
+    <div class="col-md-4">
+        <select name="categoria" class="form-select">
+            <option value="">Todas las categorías</option>
+            {% for cat in categorias %}
+                <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-danger w-100">Filtrar</button>
+        <a href="{% url 'catalogo' %}" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for producto in productos %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <span class="badge bg-secondary align-self-start mb-2">{{ producto.categoria.nombre }}</span>
+                    <h5 class="card-title">{{ producto.nombre }}</h5>
+                    <p class="card-text fs-4 fw-bold text-danger mb-2">{{ producto.precio|clp }}</p>
+                    {% if producto.stock > 0 %}
+                        <p class="text-success small mb-3">Stock disponible: {{ producto.stock }}</p>
+                        <form method="post" action="{% url 'agregar_carrito' producto.id %}" class="mt-auto d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="number" name="cantidad" value="1" min="1" max="{{ producto.stock }}" class="form-control" style="width: 80px;">
+                            <button type="submit" class="btn btn-danger w-100">Agregar</button>
+                        </form>
+                    {% else %}
+                        <span class="badge bg-dark fs-6 mt-auto py-2">Agotado</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning">No se encontraron productos disponibles.</div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
